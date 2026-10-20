@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ماكس ماكس تي في - Max Max TV</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --text-color: #333333;
+            --card-bg: #ffffff;
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --border-color: #dee2e6;
+        }
+
+        body.dark-mode {
+            --bg-color: #121212;
+            --text-color: #e0e0e0;
+            --card-bg: #1e1e1e;
+            --primary-color: #3b82f6;
+            --secondary-color: #a0aec0;
+            --border-color: #2d3748;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: var(--card-bg);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        h1 {
+            font-size: 1.25rem;
+            color: var(--primary-color);
+        }
+
+        nav button {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 8px 12px;
+            margin-left: 5px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        nav button.active {
+            background-color: var(--primary-color);
+            color: #fff;
+            border-color: var(--primary-color);
+        }
+
+        main {
+            flex: 1;
+            padding: 15px;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .player-container {
+            width: 100%;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            aspect-ratio: 16/9;
+            position: relative;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .controls-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        select, button.action-btn {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            color: var(--text-color);
+            cursor: pointer;
+        }
+
+        .grid-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 10px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .card:hover {
+            border-color: var(--primary-color);
+        }
+
+        .settings-group {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #backToTop {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: none;
+            z-index: 1000;
+        }
+
+        .category-title {
+            margin: 15px 0 10px 0;
+            font-size: 1.1rem;
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 id="appTitle">ماكس ماكس تي في</h1>
+        <nav>
+            <button onclick="switchTab('home')" id="navHome" class="active">الرئيسية</button>
+            <button onclick="switchTab('sports')" id="navSports">رياضة</button>
+            <button onclick="switchTab('live')" id="navLive">البث المباشر</button>
+            <button onclick="switchTab('settings')" id="navSettings">الإعدادات</button>
+        </nav>
+    </header>
+
+    <main>
+        <!-- الرئيسية -->
+        <div id="home" class="section active">
+            <h2 class="category-title">مرحباً بك في تطبيق ماكس ماكس تي في</h2>
+            <p style="margin-top: 10px;" id="homeDesc">اختر القسم المناسب من الشريط بالأعلى لتصفح القنوات ومشاهدة البث المباشر بكل سهولة.</p>
+        </div>
+
+        <!-- رياضة -->
+        <div id="sports" class="section">
+            <h2 class="category-title" id="sportsTitle">القنوات الرياضية</h2>
+            <div class="player-container">
+                <video id="sportsVideo" controls></video>
+            </div>
+            <div class="controls-bar">
+                <select id="sportsServerSelect" onchange="changeServer('sports')">
+                    <option value="1">ريسيفر 1</option>
+                    <option value="2">ريسيفر 2</option>
+                </select>
+                <select id="sportsQualitySelect" onchange="changeQuality('sports')">
+                    <option value="auto">تلقائي</option>
+                    <option value="1080">1080p</option>
+                    <option value="720">720p</option>
+                    <option value="576">576p</option>
+                </select>
+            </div>
+            <div id="sportsChannelsList" class="grid-cards"></div>
+        </div>
+
+        <!-- البث المباشر -->
+        <div id="live" class="section">
+            <h2 class="category-title" id="liveTitle">البث المباشر الشامل</h2>
+            <div class="player-container">
+                <video id="liveVideo" controls></video>
+            </div>
+            <div class="controls-bar">
+                <select id="liveServerSelect" onchange="changeServer('live')">
+                    <option value="1">ريسيفر 1</option>
+                    <option value="2">ريسيفر 2</option>
+                </select>
+                <select id="liveQualitySelect" onchange="changeQuality('live')">
+                    <option value="auto">تلقائي</option>
+                    <option value="1080">1080p</option>
+                    <option value="720">720p</option>
+                    <option value="576">576p</option>
+                </select>
+            </div>
+            <div id="liveChannelsList"></div>
+        </div>
+
+        <!-- الإعدادات -->
+        <div id="settings" class="section">
+            <div class="settings-group">
+                <span id="langText">اللغة</span>
+                <select id="langSelect" onchange="changeLanguage()">
+                    <option value="ar" selected>العربية</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
+            <div class="settings-group">
+                <span id="darkText">الوضع الداكن</span>
+                <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()" style="width: 20px; height: 20px; cursor: pointer;">
+            </div>
+        </div>
+    </main>
+
+    <button id="backToTop" onclick="scrollToTop()">▲</button>
+
+    <script>
+        const playlists = {
+            arab: "https://iptv-org.github.io/iptv/regions/arab.m3u",
+            sa: "https://iptv-org.github.io/iptv/countries/sa.m3u",
+            sports: "https://iptv-org.github.io/iptv/categories/sports.m3u",
+            ara: "https://iptv-org.github.io/iptv/languages/ara.m3u",
+            iq: "https://iptv-org.github.io/iptv/countries/iq.m3u",
+            kw: "https://iptv-org.github.io/iptv/countries/kw.m3u"
+        };
+
+        let allChannels = [];
+        let sportsChannels = [];
+
+        async function loadPlaylists() {
+            try {
+                for (let key in playlists) {
+                    let response = await fetch(playlists[key]);
+                    let text = await response.text();
+                    parseM3U(text, key === 'sports');
+                }
+                renderChannels();
+            } catch (e) {
+                console.error("خطأ في تحميل القنوات", e);
+            }
+        }
+
+        function parseM3U(data, isSportsOnly) {
+            let lines = data.split('\n');
+            let currentChannel = {};
+            for (let line of lines) {
+                line = line.trim();
+                if (line.startsWith('#EXTINF:')) {
+                    let tvgNameMatch = line.match(/tvg-name="([^"]*)"/);
+                    let nameParts = line.split(',');
+                    currentChannel.name = nameParts[nameParts.length - 1].trim();
+                    currentChannel.group = isSportsOnly ? 'رياضة' : 'عامة';
+                    if(line.toLowerCase().includes('foreign') || line.toLowerCase().includes('international')) {
+                        currentChannel.group = 'أجنبي';
+                    }
+                } else if (line && !line.startsWith('#')) {
+                    currentChannel.url = line;
+                    if (currentChannel.name && currentChannel.url) {
+                        if (isSportsOnly) {
+                            sportsChannels.push({...currentChannel});
+                        }
+                        if (!allChannels.some(c => c.name === currentChannel.name)) {
+                            allChannels.push({...currentChannel});
+                        }
+                    }
+                    currentChannel = {};
+                }
+            }
+        }
+
+        function renderChannels() {
+            let sportsListDiv = document.getElementById('sportsChannelsList');
+            sportsListDiv.innerHTML = '';
+            sportsChannels.forEach(channel => {
+                let card = document.createElement('div');
+                card.className = 'card';
+                card.innerText = channel.name;
+                card.onclick = () => playStream(channel.url, 'sportsVideo');
+                sportsListDiv.appendChild(card);
+            });
+
+            let liveListDiv = document.getElementById('liveChannelsList');
+            liveListDiv.innerHTML = '';
+            
+            let groups = {};
+            allChannels.forEach(ch => {
+                let g = ch.group || 'عامة';
+                if (!groups[g]) groups[g] = [];
+                groups[g].push(ch);
+            });
+
+            for (let g in groups) {
+                if (g === 'أجنبي') continue; 
+                let title = document.createElement('h3');
+                title.className = 'category-title';
+                title.innerText = g;
+                liveListDiv.appendChild(title);
+
+                let grid = document.createElement('div');
+                grid.className = 'grid-cards';
+                groups[g].forEach(channel => {
+                    let card = document.createElement('div');
+                    card.className = 'card';
+                    card.innerText = channel.name;
+                    card.onclick = () => playStream(channel.url, 'liveVideo');
+                    grid.appendChild(card);
+                });
+                liveListDiv.appendChild(grid);
+            }
+
+            if (groups['أجنبي'] && groups['أجنبي'].length > 0) {
+                let title = document.createElement('h3');
+                title.className = 'category-title';
+                title.innerText = 'أجنبي';
+                liveListDiv.appendChild(title);
+
+                let grid = document.createElement('div');
+                grid.className = 'grid-cards';
+                groups['أجنبي'].forEach(channel => {
+                    let card = document.createElement('div');
+                    card.className = 'card';
+                    card.innerText = channel.name;
+                    card.onclick = () => playStream(channel.url, 'liveVideo');
+                    grid.appendChild(card);
+                });
+                liveListDiv.appendChild(grid);
+            }
+        }
+
+        function playStream(url, videoId) {
+            let video = document.getElementById(videoId);
+            if (Hls.isSupported() && url.includes('.m3u8')) {
+                let hls = new Hls({
+                    liveSyncDurationCount: 3,
+                    liveMaxLatencyDurationCount: 10,
+                    maxLiveSyncPlaybackRate: 1.5
+                });
+                hls.loadSource(url);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    video.play();
+                });
+            } else {
+                video.src = url;
+                video.play();
+            }
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode', document.getElementById('darkModeToggle').checked);
+        }
+
+        function changeLanguage() {
+            let lang = document.getElementById('langSelect').value;
+            if (lang === 'en') {
+                document.documentElement.dir = 'ltr';
+                document.getElementById('appTitle').innerText = 'Max Max TV';
+                document.getElementById('navHome').innerText = 'Home';
+                document.getElementById('navSports').innerText = 'Sports';
+                document.getElementById('navLive').innerText = 'Live TV';
+                document.getElementById('navSettings').innerText = 'Settings';
+                document.getElementById('homeDesc').innerText = 'Welcome to Max Max TV. Choose a section from above.';
+                document.getElementById('sportsTitle').innerText = 'Sports Channels';
+                document.getElementById('liveTitle').innerText = 'Live Streaming';
+                document.getElementById('langText').innerText = 'Language';
+                document.getElementById('darkText').innerText = 'Dark Mode';
+            } else {
+                document.documentElement.dir = 'rtl';
+                document.getElementById('appTitle').innerText = 'ماكس ماكس تي في';
+                document.getElementById('navHome').innerText = 'الرئيسية';
+                document.getElementById('navSports').innerText = 'رياضة';
+                document.getElementById('navLive').innerText = 'البث المباشر';
+                document.getElementById('navSettings').innerText = 'الإعدادات';
+                document.getElementById('homeDesc').innerText = 'مرحباً بك في تطبيق ماكس ماكس تي في.';
+                document.getElementById('sportsTitle').innerText = 'القنوات الرياضية';
+                document.getElementById('liveTitle').innerText = 'البث المباشر الشامل';
+                document.getElementById('langText').innerText = 'اللغة';
+                document.getElementById('darkText').innerText = 'الوضع الداكن';
+            }
+        }
+
+        function changeServer(type) {}
+
+        function changeQuality(type) {}
+
+        window.onscroll = function() {
+            let btn = document.getElementById('backToTop');
+            if (document.documentElement.scrollTop > 200) {
+                btn.style.display = "block";
+            } else {
+                btn.style.display = "none";
+            }
+        };
+
+        function scrollToTop() {
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        }
+
+        loadPlaylists();
+    </script>
+</body>
+</html>
